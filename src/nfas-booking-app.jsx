@@ -1,7 +1,7 @@
 'use strict';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { HelpBlock, Button, FormControl, FormGroup, Form, Checkbox, Radio, ControlLabel, Col, Row } from 'react-bootstrap'
+import { Button, FormControl, FormGroup, Form, Checkbox, ControlLabel, Col } from 'react-bootstrap'
 import { Archer } from './archer'
 import { ShootDays } from "./shoot_days";
 import { FormErrors } from "./form_errors";
@@ -22,6 +22,9 @@ class BookingForm extends React.Component {
             multiple_shoot_days: false,
             licence: props.licence,
             shootID: props.shoot,
+            times_round: '',
+            num_targets: '',
+            max_per_target: '',
             licenceValid: false,
             shootValid: false,
             loadError: false,
@@ -117,23 +120,20 @@ class BookingForm extends React.Component {
         /* Causes error.... */
         this.setState(
             {
-                formErrors: fieldValidationErrors,
+                formErrors: fieldValidationErrors
             });
         return null;
     }
 
     validateForm() {
-        if (this.state.formErrors.length > 0) {
-            this.setState({formValid: false});
-            return false;
-        } else {
-            this.setState({formValid: true});
-            return true;
-        }
+        let errors = this.state.formErrors;
+
+        return (Object.keys(errors).length > 0);
+
     }
 
     formSubmit() {
-        console.log(this.state);
+        //console.log(this.state);
         // Validate form and submit if ok.
 
         if (this.validateForm()) {
@@ -172,7 +172,7 @@ class BookingForm extends React.Component {
                     'age5': this.state._nfas_bf_age5,
                     'club5': this.state._nfas_bf_club5
                 });
-            fetch('http://localhost:8888/nfas_booking/save_booking', {
+            fetch('https://booking-nfas-api.singlearrow.co.uk/nfas_booking/save_booking', {
                 method: 'POST',
                 body: this.data,
                 headers: {
@@ -184,7 +184,7 @@ class BookingForm extends React.Component {
                         this.setState({saved: true});
                         return response.json();
                     } else {
-                        console.log(response.statusText);
+                        //console.log(response.statusText);
                         this.setState({saveError: true});
                         return response.json();
                     }
@@ -192,7 +192,7 @@ class BookingForm extends React.Component {
                 }
             )
             .then( (data) => {
-                console.log(data);
+                //console.log(data);
                 if (this.state.saveError) {
                     this.setState({saveErrorMsg: data.error})
                 } else {
@@ -200,9 +200,11 @@ class BookingForm extends React.Component {
                 }
             })
             .catch( (error) => {
-                    console.log(error);
+                    //console.log(error);
                 }
             );
+        } else {
+            alert("Form incomplete");
         }
 
     }
@@ -218,7 +220,7 @@ class BookingForm extends React.Component {
     componentDidMount() {
         this.setState({ isLoading: true });
         this.data = JSON.stringify({'licence': this.state.licence, 'shoot': this.state.shootID});
-        fetch('http://localhost:8888/nfas_booking/get_shoot', {
+        fetch('https://booking-nfas-api.singlearrow.co.uk/nfas_booking/get_shoot', {
             method: 'POST',
             body: this.data,
             headers: {
@@ -229,7 +231,7 @@ class BookingForm extends React.Component {
                 if (response.status === 200) {
                     return response.json();
                 } else {
-                    console.log(response.statusText);
+                    //console.log(response.statusText);
                     this.setState({isLoading: false, loadError: true});
                     return response.json();
                 }
@@ -237,7 +239,7 @@ class BookingForm extends React.Component {
             }
         )
         .then( (data) => {
-            console.log(data);
+            //console.log(data);
             if (this.state.loadError) {
                 this.setState({loadErrorMsg: data.error})
             } else {
@@ -245,7 +247,7 @@ class BookingForm extends React.Component {
             }
         })
         .catch( (error) => {
-                console.log(error);
+                //console.log(error);
             }
         );
     }
@@ -271,7 +273,7 @@ class BookingForm extends React.Component {
         }
 
         return (
-            <div className={"container-fluid"}>
+            <div className={"container"}>
                 <Form horizontal action={"#"} method={"get"}>
                     <input type={"hidden"} name={"_nfas_bf_shoot_id"} value={shootData.id}/>
                     <FormGroup>
@@ -285,38 +287,34 @@ class BookingForm extends React.Component {
                         </Col>
                     </FormGroup>
                     <FormGroup>
-                        <Col sm={12}>
-                            Please use the form below to book into the above shoot. You can book in up to 5 archers per form.
-                            Fields in red are required.
+                        <Col sm={2}>Shoot Format:</Col>
+                        <Col sm={4}>
+                            { shootData.times_round } x { shootData.num_targets } targets
+                        </Col>
+                        <Col sm={2}>Max Archers Per Target:</Col>
+                        <Col sm={4}>
+                            { shootData.max_per_target }
                         </Col>
                     </FormGroup>
                     <FormGroup>
                         <Col sm={12}>
-                            <FormErrors formErrors={this.state.formErrors} />
+                            Please use the form below to book into the above shoot. You can book in up to { shootData.max_per_target } archers per form.
+                            Fields in red are required.
                         </Col>
                     </FormGroup>
 
 
-                    <Archer archerID={'1'}
-                            state={this.state}
-                            handleChange={this.handleChange}
-                    />
-                    <Archer archerID={'2'}
-                            state={this.state}
-                            handleChange={this.handleChange}
-                    />
-                    <Archer archerID={'3'}
-                            state={this.state}
-                            handleChange={this.handleChange}
-                    />
-                    <Archer archerID={'4'}
-                            state={this.state}
-                            handleChange={this.handleChange}
-                    />
-                    <Archer archerID={'5'}
-                            state={this.state}
-                            handleChange={this.handleChange}
-                    />
+                    {Array.apply(null, Array(shootData.max_per_target)).map(function(item, i){
+                        return (
+                          <Archer archerID={i+1}
+                                  key={i}
+                                  state={this.state}
+                                  handleChange={this.handleChange}
+                          />
+                        );
+                    }, this)}
+
+
 
                     <FormGroup controlId={"_nfas_bf_shoot_together"}>
                         <Col sm={2} componentClass={ControlLabel}>
@@ -379,10 +377,7 @@ class BookingForm extends React.Component {
                         controlId={"_nfas_bf_permission"}
                     >
                         <Col componentClass={ControlLabel} sm={10}>
-                            In order to provide this online booking service SingleArrow
-                                     will hold onto the details provided until after the shoot date has passed when
-                                     it will be automatically deleted. This is to allow the club to access a list of
-                                     booked in archers. In order to use this book in form you will need to agree to us
+                            In order to use this book in form you will need to agree to SingleArrow and the club
                                      temporarily holding the above data
                         </Col>
                         <Col sm={2}>
@@ -395,7 +390,11 @@ class BookingForm extends React.Component {
                         </Col>
 
                     </FormGroup>
-
+                    <FormGroup>
+                        <Col sm={12}>
+                            <FormErrors formErrors={this.state.formErrors} />
+                        </Col>
+                    </FormGroup>
                     <FormGroup>
                         <Col smOffset={2} sm={10}>
                           <Button onClick={this.formSubmit}>Book in</Button>

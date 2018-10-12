@@ -10,8 +10,7 @@ export class Archer extends React.Component {
     getValidationState(id) {
         var { ...otherProps } = this.props;
         let fieldValidationErrors = this.props.state.formErrors;
-
-        switch(id) {
+        switch(id.toString()) {
             case '1':
                 // Must have all fields set
                 if (this.props.state["_nfas_bf_name"+id].length <= 0) {
