@@ -127,8 +127,8 @@ class BookingForm extends React.Component {
 
     validateForm() {
         let errors = this.state.formErrors;
-
-        return (Object.keys(errors).length > 0);
+        console.log(errors);
+        return (Object.keys(errors).length == 0);
 
     }
 
